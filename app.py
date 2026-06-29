@@ -19,7 +19,19 @@ events = [
     Event(2, "Python Workshop")
 ]
 
-# POST /events - Create a new event
+# Welcome route
+@app.route("/")
+def home():
+    return jsonify({"message": "Welcome to the Event API"}), 200
+
+
+# GET all events
+@app.route("/events", methods=["GET"])
+def get_events():
+    return jsonify([event.to_dict() for event in events]), 200
+
+
+# POST a new event
 @app.route("/events", methods=["POST"])
 def create_event():
     data = request.get_json()
@@ -27,13 +39,14 @@ def create_event():
     if not data or "title" not in data:
         return jsonify({"error": "Title is required"}), 400
 
-    new_id = len(events) + 1
+    new_id = max([event.id for event in events], default=0) + 1
     new_event = Event(new_id, data["title"])
     events.append(new_event)
 
     return jsonify(new_event.to_dict()), 201
 
-# PATCH /events/<id> - Update an event title
+
+# PATCH an existing event
 @app.route("/events/<int:id>", methods=["PATCH"])
 def update_event(id):
     data = request.get_json()
@@ -48,15 +61,17 @@ def update_event(id):
 
     return jsonify({"error": "Event not found"}), 404
 
-# DELETE /events/<id> - Remove an event
+
+# DELETE an event
 @app.route("/events/<int:id>", methods=["DELETE"])
 def delete_event(id):
-    for event in events:
+    for index, event in enumerate(events):
         if event.id == id:
-            events.remove(event)
-            return jsonify({"message": "Event deleted successfully"}), 200
+            del events[index]
+            return "", 204
 
     return jsonify({"error": "Event not found"}), 404
+
 
 if __name__ == "__main__":
     app.run(debug=True)
